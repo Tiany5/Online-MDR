@@ -32,8 +32,7 @@ The following tables map the provided scripts to the figures in the paper.
 ### 1. Main Performance (MDR/FDR Control)
 | Figure in Paper | Description | Script to Run |
 | :--- | :--- | :--- |
-| **Figure 1 (Left)** | MDR Control (Setting a & b) | `setting1.R`, `setting2.R` |
-| **Figure 1 (Right)** | FDR Cost (Setting a & b) | `setting1.R`, `setting2.R` |
+| **Figure 1** | MDR Control vs. FDR Cost (Setting a & b) | `setting1.R`, `setting2.R` |
 | **Figure 2** | Capacity Process & Signal Burst | `capacity.R` |
 | **Figure 3** | Credit Card Fraud Detection | `CCFD.R` |
 
