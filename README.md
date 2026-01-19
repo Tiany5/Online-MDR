@@ -38,13 +38,11 @@ The following tables map the provided scripts to the figures in the paper.
 | **Figure 3** | Credit Card Fraud Detection | `CCFD.R` |
 
 ### 2. Sensitivity & Robustness (Appendix)
-| Parameter Analyzed | Scenario | Script to Run |
+| Parameter Analyzed | Research Focus | Source Script |
 | :--- | :--- | :--- |
-| **Signal Prop. ($\pi$)** | Robustness check | `setting1_varied_pi.R`, `setting2_varied_pi.R` |
-| **Signal Strength ($\mu/k$)**| Detectability check | `setting1_varied_mu.R`, `setting2_varied_k.R` |
-| **Labeled Samples ($n$)** | Estimation convergence | `n_vary.R` |
-| **Unlabeled Batch ($K_0$)** | Initialization impact | `K0_vary.R` |
-| **Window Size ($D$)** | Adaptation memory | `D_vary.R` |
+| **Signal Proportion ($\pi$)** | Robustness to signal prevalence | `setting1_varied_pi.R`, `setting2_varied_pi.R` |
+| **Signal Strength ($\mu, k$)** | Impact of signal-to-noise ratio | `setting1_varied_mu.R`, `setting2_varied_k.R` |
+| **Hyperparameters ($n, K_0, D$)** | Influence of initialization and memory | `D,K0,n_vary.R` |
 
 ---
 
