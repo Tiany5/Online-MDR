@@ -1,12 +1,14 @@
-#' Sensitivity Analysis for Signal Proportion (pi_1) - Setting 2 (Skewed)
-#' 
-#' This script strictly follows the "Golden Standard" logic to evaluate pi_1 impact.
-#' 
-#' Author: [Anonymous]
-#' Date: January 2025
+# ==============================================================================
+# SCRIPT: Sensitivity Analysis for Signal Proportion (pi) - Setting 2 (Skewed)
+# Description: This script evaluates the robustness of the OMDRC framework 
+#              under varying signal proportions (pi) using the Ratio of 
+#              Expectations formula for MDR and FDR.
+# Submission: Anonymous for ICML Review
+# ==============================================================================
 
-setwd('/Users/tiany/Desktop/zju/online MDR/code-semi-github')
-
+# ------------------------------------------------------------------------------
+# 1. Environment Setup and Dependencies
+# ------------------------------------------------------------------------------
 library(Matrix)
 library(foreach)
 library(doParallel)
@@ -16,63 +18,77 @@ library(kedd)
 library(onlineFDR)
 library(patchwork)
 
-# --- 1. Simulation Function (Strict Golden Standard Logic) ---
+# NOTE: Please set your working directory to the folder containing 'OMDRC.R'
+# setwd("path/to/reproducible/code")
+source('OMDRC.R')
 
+# ------------------------------------------------------------------------------
+# 2. Core Simulation Logic (Setting 2: Skewed Distributions)
+# ------------------------------------------------------------------------------
 run_sim_pi_set2 <- function(pi_val, m, n, ini, alpha, reps, D) {
   
-  # 初始化存储矩阵 (严格遵循黄金标准)
-  n_mdr_or <- matrix(0, reps, length(m)); d_mdr_or <- matrix(0, reps, length(m))
-  n_mdr_dd <- matrix(0, reps, length(m)); d_mdr_dd <- matrix(0, reps, length(m))
-  n_mdr_off <- matrix(0, reps, length(m)); d_mdr_off <- matrix(0, reps, length(m))
+  # Initialization: Matrices to store Numerators and Denominators for MDR calculation
+  # MDR = E[Uncovered Signals] / E[Total Signals]
+  n_mdr_or      <- matrix(0, reps, length(m)); d_mdr_or      <- matrix(0, reps, length(m))
+  n_mdr_dd      <- matrix(0, reps, length(m)); d_mdr_dd      <- matrix(0, reps, length(m))
+  n_mdr_off     <- matrix(0, reps, length(m)); d_mdr_off     <- matrix(0, reps, length(m))
   n_mdr_saffron <- matrix(0, reps, length(m)); d_mdr_saffron <- matrix(0, reps, length(m))
   
-  n_fdr_or <- matrix(0, reps, length(m)); d_fdr_or <- matrix(0, reps, length(m))
-  n_fdr_dd <- matrix(0, reps, length(m)); d_fdr_dd <- matrix(0, reps, length(m))
-  n_fdr_off <- matrix(0, reps, length(m)); d_fdr_off <- matrix(0, reps, length(m))
+  # Matrices for FDR (False Discovery Rate) tracking
+  n_fdr_or      <- matrix(0, reps, length(m)); d_fdr_or      <- matrix(0, reps, length(m))
+  n_fdr_dd      <- matrix(0, reps, length(m)); d_fdr_dd      <- matrix(0, reps, length(m))
+  n_fdr_off     <- matrix(0, reps, length(m)); d_fdr_off     <- matrix(0, reps, length(m))
   n_fdr_saffron <- matrix(0, reps, length(m)); d_fdr_saffron <- matrix(0, reps, length(m))
   
-  # 参数设置 (Setting 2: Skewed)
+  # Setting 2 Configuration: Non-Gaussian distributions
   shape_alt <- 3; scale_alt <- 1
   M_ref <- 200000; set.seed(202402)
-  # 参考分布：来自 Alternative (Gamma)
+  # Global reference set for SAFFRON p-value derivation (based on Alternative/Gamma)
   z_ref_global <- rgamma(M_ref, shape = shape_alt, scale = scale_alt)
   
+  # Parallel Backend Configuration
   cl <- makeCluster(min(parallel::detectCores() - 1, 10))
   registerDoParallel(cl)
   on.exit({ stopCluster(cl); registerDoSEQ() }) 
   clusterExport(cl, c("m", "n", "ini", "reps", "alpha", "D", "z_ref_global", "shape_alt", "scale_alt", "pi_val"), envir = environment())
   
-  # 2. 并行计算
+  # Execute Parallel Monte Carlo Simulations
   results_list <- foreach(r = 1:reps, .packages = c("kedd", "onlineFDR")) %dopar% {
     source('OMDRC.R')
     set.seed(r)
     N <- max(m) + ini
     
-    # 生成真实状态 theta
+    # --- Data Generation Process ---
+    # Latent state generation (theta) based on signal proportion pi
     theta <- rbinom(N, 1, pi_val) 
-    # z0 ~ Exp(1), z1 ~ Gamma(3, 1)
-    z <- ifelse(theta == 0, rexp(N, rate = 1), rgamma(N, shape = shape_alt, scale = scale_alt))
+    # z0 (Null) ~ Exp(1), z1 (Alternative) ~ Gamma(3, 1)
+    z <- ifelse(theta == 0, rexp(N, rate = 1), 
+                rgamma(N, shape = shape_alt, scale = scale_alt))
     
-    # 计算密度与 Oracle lmdr
+    # --- Likelihood Ratio (Local MDR) Calculation ---
     f0 <- dexp(z, rate = 1)
     f1 <- dgamma(z, shape = shape_alt, scale = scale_alt)
     z_lmdr_all <- (pi_val * f1) / ((1 - pi_val) * f0 + pi_val * f1)
     
-    z_stream <- z[(ini + 1):N]; z_lmdr <- z_lmdr_all[(ini + 1):N]; theta_stream <- theta[(ini + 1):N]
+    # --- Stream Partitioning ---
+    z_stream      <- z[(ini + 1):N]
+    z_lmdr        <- z_lmdr_all[(ini + 1):N]
+    theta_stream  <- theta[(ini + 1):N]
     
-    # p-value 计算 (ECDF 基于 Alternative 样本)
+    # P-value derivation for baseline (SAFFRON) via empirical CDF
     p_values <- pmin(pmax(ecdf(z_ref_global)(z_stream), 0), 1)
     
-    # 生成用于 DD 方法的辅助样本
+    # Generate auxiliary labeled samples for Data-Driven (DD) method
     z1_aux <- rgamma(n, shape = shape_alt, scale = scale_alt)
     
-    # 算法决策
-    dec_or <- OMDRC_OR(z_lmdr, alpha)$de
-    dec_dd <- OMDRC_DD(z_stream, z[1:ini], z1_aux, alpha, D)$de
-    dec_off <- OMDRC_OFF(z_lmdr, alpha)$de
-    # 黄金标准：SAFFRON 拒绝转为 0，不拒绝转为 1
+    # --- Decision Extraction ---
+    dec_or      <- OMDRC_OR(z_lmdr, alpha)$de
+    dec_dd      <- OMDRC_DD(z_stream, z[1:ini], z1_aux, alpha, D)$de
+    dec_off     <- OMDRC_OFF(z_lmdr, alpha)$de
+    # Map SAFFRON rejections to binary discoveries
     dec_saffron <- 1 - onlineFDR::SAFFRON(p_values, alpha = alpha)$R
     
+    # Metric helper functions (Numerator and Denominator extractions)
     get_n_mdr <- function(th, de) sapply(m, function(k) sum(th[1:k] * (1 - de[1:k])))
     get_d_mdr <- function(th)     sapply(m, function(k) max(sum(th[1:k]), 1))
     get_n_fdr <- function(th, de) sapply(m, function(k) sum((1 - th[1:k]) * de[1:k]))
@@ -88,19 +104,19 @@ run_sim_pi_set2 <- function(pi_val, m, n, ini, alpha, reps, D) {
          nf_saffron = get_n_fdr(theta_stream, dec_saffron), df_saffron = get_d_fdr(dec_saffron))
   }
   
-  # 3. 填充矩阵 (严格黄金标准)
+  # Consolidating results from all parallel workers
   for (r in 1:reps) {
-    n_mdr_or[r,] <- results_list[[r]]$n_or; d_mdr_or[r,] <- results_list[[r]]$d_or
-    n_fdr_or[r,] <- results_list[[r]]$nf_or; d_fdr_or[r,] <- results_list[[r]]$df_or
-    n_mdr_dd[r,] <- results_list[[r]]$n_dd; d_mdr_dd[r,] <- results_list[[r]]$d_dd
-    n_fdr_dd[r,] <- results_list[[r]]$nf_dd; d_fdr_dd[r,] <- results_list[[r]]$df_dd
+    n_mdr_or[r,]  <- results_list[[r]]$n_or;  d_mdr_or[r,]  <- results_list[[r]]$d_or
+    n_fdr_or[r,]  <- results_list[[r]]$nf_or; d_fdr_or[r,]  <- results_list[[r]]$df_or
+    n_mdr_dd[r,]  <- results_list[[r]]$n_dd;  d_mdr_dd[r,]  <- results_list[[r]]$d_dd
+    n_fdr_dd[r,]  <- results_list[[r]]$nf_dd; d_fdr_dd[r,]  <- results_list[[r]]$df_dd
     n_mdr_off[r,] <- results_list[[r]]$n_off; d_mdr_off[r,] <- results_list[[r]]$d_off
-    n_fdr_off[r,] <- results_list[[r]]$nf_off; d_fdr_off[r,] <- results_list[[r]]$df_off
+    n_fdr_off[r,] <- results_list[[r]]$nf_off;d_fdr_off[r,] <- results_list[[r]]$df_off
     n_mdr_saffron[r,] <- results_list[[r]]$n_saffron; d_mdr_saffron[r,] <- results_list[[r]]$d_saffron
-    n_fdr_saffron[r,] <- results_list[[r]]$nf_saffron; d_fdr_saffron[r,] <- results_list[[r]]$df_saffron
+    n_fdr_saffron[r,] <- results_list[[r]]$nf_saffron;d_fdr_saffron[r,] <- results_list[[r]]$df_saffron
   }
   
-  # 4. 混合计算：MDR = E[Num]/E[Den] | FDR = E[Num/Den]
+  # Final Performance Calculation: Ratio of Expectations
   return(list(
     mdr = rbind(colMeans(n_mdr_or) / colMeans(d_mdr_or),
                 colMeans(n_mdr_dd) / colMeans(d_mdr_dd),
@@ -113,25 +129,31 @@ run_sim_pi_set2 <- function(pi_val, m, n, ini, alpha, reps, D) {
   ))
 }
 
-# --- 2. Plotting Configuration ---
-my_colors <- c("OMDRC.OR"="#F8766D", "OMDRC.DD"="#7CAE00", "FT"="#00BFC4", "Adj-SAFFRON"="#C77CFF")
-my_shapes <- c("OMDRC.OR"=16, "OMDRC.DD"=17, "FT"=15, "Adj-SAFFRON"=3)
+# ------------------------------------------------------------------------------
+# 3. Visualization Configuration and Plotting Settings
+# ------------------------------------------------------------------------------
+my_colors    <- c("OMDRC.OR"="#F8766D", "OMDRC.DD"="#7CAE00", "FT"="#00BFC4", "Adj-SAFFRON"="#C77CFF")
+my_shapes    <- c("OMDRC.OR"=16, "OMDRC.DD"=17, "FT"=15, "Adj-SAFFRON"=3)
 custom_theme <- theme_bw() + 
-  theme(plot.subtitle = element_text(size = 15, hjust = 0.5, margin = margin(b = 5)),
-        legend.title = element_blank(), legend.text = element_text(size = 15),
-        axis.text = element_text(size = 15, colour = "black"), axis.title = element_text(size = 15),
+  theme(plot.subtitle    = element_text(size = 15, hjust = 0.5, margin = margin(b = 5)),
+        legend.title     = element_blank(), 
+        legend.text      = element_text(size = 15),
+        axis.text        = element_text(size = 15, colour = "black"), 
+        axis.title       = element_text(size = 15),
         panel.grid.major = element_line(colour = "grey92", linewidth = 0.4),
-        panel.border = element_rect(colour = "black", fill=NA, linewidth=0.8))
+        panel.border     = element_rect(colour = "black", fill = NA, linewidth = 0.8))
 
-# --- 3. Visualization Helper (FIXED ALIGNMENT) ---
+# ------------------------------------------------------------------------------
+# 4. Visualization Helper Function (Fixed Alignment)
+# ------------------------------------------------------------------------------
 plot_panel <- function(res, p_val, type = "MDR") {
   method_labels <- c('OMDRC.OR', 'OMDRC.DD', 'FT', 'Adj-SAFFRON')
   mat <- if(type == "MDR") res$mdr else res$fdr
   
   df <- data.frame(
-    t = rep(params$m, times = 4),
+    t     = rep(params$m, times = 4),
     value = as.vector(t(mat)), 
-    type = factor(rep(method_labels, each = length(params$m)), levels = method_labels)
+    type  = factor(rep(method_labels, each = length(params$m)), levels = method_labels)
   )
   
   p_main <- ggplot(df, aes(x = t, y = value, color = type, shape = type)) +
@@ -143,10 +165,10 @@ plot_panel <- function(res, p_val, type = "MDR") {
     p_main <- p_main + geom_hline(yintercept = params$alpha, linetype = 'dashed', color = 'black') +
       scale_y_continuous(breaks = seq(0, 0.5, by = 0.1))
     
-    # Inset Logic
+    # --- Inset detailed view logic ---
     df_zoom <- df %>% filter(type %in% c("OMDRC.OR", "FT"))
-    limits <- df_zoom %>% summarise(ymin = min(value), ymax = max(value))
-    y_pad <- (limits$ymax - limits$ymin) * 0.15
+    limits  <- df_zoom %>% summarise(ymin = min(value), ymax = max(value))
+    y_pad   <- (limits$ymax - limits$ymin) * 0.15
     y_breaks <- seq(round(limits$ymin, 3), round(limits$ymax, 3), length.out = 2)
     
     p_inset <- ggplot(df %>% filter(type != "Adj-SAFFRON"), aes(x = t, y = value, color = type, shape = type)) +
@@ -165,17 +187,26 @@ plot_panel <- function(res, p_val, type = "MDR") {
   return(p_final)
 }
 
-# --- 4. Execute and Plot ---
+# ------------------------------------------------------------------------------
+# 5. Execution and Final Plot Generation
+# ------------------------------------------------------------------------------
+# Parameter grid for signal proportions
 pi_list <- c(0.05, 0.075, 0.1, 0.125, 0.15, 0.175)
-params <- list(ini = 500, m = seq(100, 1000, 50), n = 100, alpha = 0.1, reps = 1000, D = 1000)
+params  <- list(ini = 500, m = seq(100, 1000, 50), n = 100, alpha = 0.1, reps = 1000, D = 1000)
 
+cat("Running Sensitivity Analysis for pi_list...\n")
 all_results2_pi <- lapply(pi_list, function(p) run_sim_pi_set2(p, params$m, params$n, params$ini, params$alpha, params$reps, params$D))
 
+# Generate individual panels for MDR and FDR
 mdr_plots2 <- lapply(1:6, function(i) plot_panel(all_results2_pi[[i]], pi_list[i], "MDR"))
 fdr_plots2 <- lapply(1:6, function(i) plot_panel(all_results2_pi[[i]], pi_list[i], "FDR"))
 
+# Consolidate into the final layout
 final_layout2 <- (wrap_plots(mdr_plots2, ncol=2) | wrap_plots(fdr_plots2, ncol=2)) + 
   plot_layout(guides = 'collect') & theme(legend.position = 'bottom')
 
+# Display final result
 print(final_layout2)
-save.image(file = "Setting1,2_Varied_Workspace.RData")
+
+# Save workspace for reproducibility
+save.image(file = "Setting2_pi_Sensitivity_Results.RData")
