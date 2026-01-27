@@ -1,6 +1,6 @@
 # Sequential Anomaly Detection with Online Missed Discovery Rate Control
 
-This repository contains the R implementation for the paper 'Sequential Anomaly Detection with Online Missed Discovery Rate Control' submitted to ICML 2026.
+This repository contains the R implementation for the paper 'Sequential Anomaly Detection with Online Missed Discovery Rate Control'.
 
 ## 📖 Overview
 OMDRC is a novel framework designed for high-stakes online monitoring where failing to detect a signal (Missed Discovery) is more costly than a false alarm. Unlike traditional Online FDR methods, our framework uses a dynamic "alpha-wealth" (earn-and-spend) mechanism to guarantee online MDR control, even in semi-supervised settings where signal patterns are learned on the fly.
