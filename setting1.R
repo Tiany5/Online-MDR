@@ -3,7 +3,6 @@
 # Description: This script reproduces Figures (a.1) and (a.2) for Setting 1 
 #              (Fixed Signal Proportion). It evaluates performance using the 
 #              "Ratio of Expectations" formula.
-# Submission: Anonymous for Review (ICML)
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
@@ -40,7 +39,7 @@ run_simulation_setting1 <- function(m, n, ini, alpha, reps, D) {
   n_fdr_saffron <- matrix(0, reps, length(m)); d_fdr_saffron <- matrix(0, reps, length(m))
   
   # Data-generating parameters
-  mu1 <- 2; mu2 <- -3; sd1 <- 0.7; M_ref <- 200000
+  mu1 <- 2; mu2 <- -3; sd1 <- 0.7; M_ref <- 200000; pi=0.08
   set.seed(202401)
   z_ref_global <- c(rnorm(M_ref/2, mu1, sd1), rnorm(M_ref/2, mu2, sd1))
   
@@ -58,14 +57,14 @@ run_simulation_setting1 <- function(m, n, ini, alpha, reps, D) {
     
     # --- Data Generation Process ---
     N <- max(m) + ini
-    theta <- rbinom(N, 1, 0.1) # 10% signal proportion
+    theta <- rbinom(N, 1, pi) # 10% signal proportion
     z <- ifelse(theta == 0, rnorm(N, 0, 1), 
                 rnorm(N, ifelse(rbinom(N, 1, 0.5) == 1, mu1, mu2), sd1))
     
     # --- Likelihood Ratio Calculation (Oracle) ---
     f0 <- dnorm(z, 0, 1)
     f1 <- 0.5 * dnorm(z, mu1, sd1) + 0.5 * dnorm(z, mu2, sd1)
-    z_lmdr_all <- (0.1 * f1) / (0.9 * f0 + 0.1 * f1)
+    z_lmdr_all <- (pi * f1) / ((1-pi) * f0 + pi * f1)
     
     # Stream partitioning
     z_stream     <- z[(ini + 1):N]
@@ -179,6 +178,7 @@ g1.1_main <- ggplot(df_mdr, aes(x = t, y = value, color = type, shape = type)) +
   geom_hline(yintercept = 0.1, linetype = 'dashed', linewidth = 0.8, col = 'black') + 
   scale_color_manual(values = my_colors) + scale_shape_manual(values = my_shapes) +
   labs(subtitle = "(a.1)", x = "Time (t)", y = "MDR") + custom_theme +
+  coord_cartesian(ylim = c(0, NA)) +
   scale_y_continuous(breaks = seq(0, 0.5, by = 0.1))
 
 # --- Inset Calculation ---
@@ -197,7 +197,7 @@ g1.1_inset_clean <- ggplot(df_mdr_zoom, aes(x = t, y = value, color = type, shap
   theme_void() + theme(panel.background = element_rect(fill = "white", color = "black", linewidth = 0.5),
                        axis.text = element_text(size = 9, colour = "black"))
 
-g1.1_final <- g1.1_main + inset_element(g1.1_inset_clean, 0.4, 0.2, 0.98, 0.6)
+g1.1_final <- g1.1_main + inset_element(g1.1_inset_clean, 0.4, 0.4, 0.98, 0.8)
 
 # (a.2) FDR Comparison Plot
 g1.2 <- ggplot(df_fdr, aes(x = t, y = value, color = type, shape = type)) +
