@@ -5,7 +5,6 @@
 # Logic: 
 #   - MDR: Computed using the Ratio of Expectations formula.
 #   - SAFFRON: Baseline decision via the 1-R discovery mapping.
-# Submission: Anonymous for ICML Review
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
@@ -91,7 +90,7 @@ run_sim_k_set2 <- function(k_val, m, n, ini, alpha, reps, D) {
     get_n_mdr <- function(th, de) sapply(m, function(k_idx) sum(th[1:k_idx] * (1 - de[1:k_idx])))
     get_d_mdr <- function(th)     sapply(m, function(k_idx) max(sum(th[1:k_idx]), 1))
     get_n_fdr <- function(th, de) sapply(m, function(k_idx) sum((1 - th[1:k_idx]) * de[1:k_idx]))
-    get_d_fdr <- function(de)     sapply(m, function(k_idx) max(sum(de[1_idx:k_idx]), 1))
+    get_d_fdr <- function(de)     sapply(m, function(k_idx) max(sum(de[1:k_idx]), 1))
     
     list(n_or = get_n_mdr(theta_stream, dec_or),   d_or = get_d_mdr(theta_stream),
          nf_or = get_n_fdr(theta_stream, dec_or),  df_or = get_d_fdr(dec_or),
@@ -206,4 +205,4 @@ final_layout2_k <- (wrap_plots(mdr_plots, ncol=2) | wrap_plots(fdr_plots, ncol=2
 print(final_layout2_k)
 
 # Save workspace for reproducibility
-save.image(file = "Sensitivity_Analysis_k_Results.RData")
+save.image(file = "Setting2_pi_Sensitivity_Results.RData")
