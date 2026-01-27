@@ -3,7 +3,6 @@
 # Description: This script evaluates the robustness of the Online MDR Control 
 #              framework under varying signal strengths (mu). Performance 
 #              metrics are computed using the Ratio of Expectations formula.
-# Submission: Anonymous for Review (ICML)
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
@@ -158,7 +157,8 @@ plot_panel <- function(res, mu_val, type = "MDR") {
   
   if (type == "MDR") {
     p_main <- p_main + geom_hline(yintercept = params$alpha, linetype = 'dashed', color = 'black') +
-      scale_y_continuous(breaks = seq(0, 0.5, by = 0.1))
+      scale_y_continuous(breaks = seq(0, 0.5, by = 0.1))+
+      coord_cartesian(ylim = c(0, NA))
     
     # --- Inset detailed view ---
     df_zoom <- df %>% filter(type %in% c("OMDRC.OR", "FT"))
@@ -202,4 +202,4 @@ final_layout <- (wrap_plots(mdr_plots, ncol=2) | wrap_plots(fdr_plots, ncol=2)) 
 print(final_layout)
 
 # Save the workspace for reproduction
-save.image(file = "Sensitivity_Analysis_Mu_Results.RData")
+save.image(file = "Sensitivity_Analysis_Results.RData")
