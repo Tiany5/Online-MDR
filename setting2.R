@@ -4,7 +4,6 @@
 #              where null and alternative distributions are non-Gaussian 
 #              (Exponential vs. Gamma). Metrics are computed using the 
 #              Ratio of Expectations.
-# Submission: Anonymous for Review (ICML)
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
@@ -61,7 +60,7 @@ run_simulation_setting2 <- function(m, n, ini, alpha, reps, D) {
     
     # --- Data Generation Process ---
     N <- max(m) + ini
-    pi_t <- rep(0.1, N)
+    pi_t <- rep(0.08, N)
     theta <- rbinom(N, 1, pi_t)
     
     z0 <- rexp(N, rate = 1) # Null ~ Exp(1)
@@ -180,6 +179,7 @@ g2.1_main <- ggplot(df_mdr2, aes(x = t, y = value, color = type, shape = type)) 
   geom_hline(yintercept = 0.1, linetype = 'dashed', linewidth = 0.8, col = 'black') + 
   scale_color_manual(values = my_colors) + scale_shape_manual(values = my_shapes) +
   labs(subtitle = "(b.1)", x = "Time (t)", y = "MDR") + custom_theme +
+  coord_cartesian(ylim = c(0, NA)) +
   scale_y_continuous(breaks = seq(0, 0.5, by = 0.1))
 
 # --- Inset detailed comparison for OMDRC vs FT ---
@@ -197,7 +197,7 @@ g2.1_inset <- ggplot(df_mdr2_zoom, aes(x = t, y = value, color = type, shape = t
   theme_void() + theme(panel.background = element_rect(fill = "white", color = "black", linewidth = 0.5),
                        axis.text = element_text(size = 9, colour = "black"))
 
-g2.1_final <- g2.1_main + inset_element(g2.1_inset, 0.4, 0.2, 0.98, 0.6)
+g2.1_final <- g2.1_main + inset_element(g2.1_inset, 0.4, 0.4, 0.98, 0.8)
 
 # Panel (b.2) - FDR Control
 g2.2 <- ggplot(df_fdr2, aes(x = t, y = value, color = type, shape = type)) +
