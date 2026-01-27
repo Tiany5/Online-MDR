@@ -2,7 +2,6 @@
 # SCRIPT: Sensitivity Analysis for Signal Proportion (pi)
 # Description: This script evaluates the robustness of the Online MDR Control 
 #              framework across a range of signal proportions (pi).
-# Submission: Anonymous for Review (ICML)
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
@@ -153,11 +152,12 @@ plot_panel_p <- function(res, p_val, type = "MDR") {
   p_main <- ggplot(df, aes(x = t, y = value, color = type, shape = type)) +
     geom_line(linewidth = 0.7) + geom_point(size = 1.5) +
     scale_color_manual(values = my_colors) + scale_shape_manual(values = my_shapes) +
-    labs(subtitle = bquote(pi == .(p_val)), x = "Time (t)", y = type) + custom_theme
+    labs(subtitle = bquote(pi == .(p_val)), x = "Time (t)", y = type) +
+    custom_theme
   
   if (type == "MDR") {
     p_main <- p_main + geom_hline(yintercept = params$alpha, linetype = 'dashed', color = 'black') +
-      scale_y_continuous(breaks = seq(0, 0.5, by = 0.1))
+      scale_y_continuous(breaks = seq(0, 0.5, by = 0.1))+coord_cartesian(ylim = c(0, NA))
     
     # Inset configuration for detailed comparison
     df_zoom <- df %>% filter(type %in% c("OMDRC.OR", "FT"))
