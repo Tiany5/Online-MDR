@@ -2,33 +2,40 @@
 # MODULE: Online Missed Discovery Rate Control (OMDRC) Functions
 # Description: This file contains implementation for Data-Driven, Oracle, 
 #              and Offline algorithms for controlling the Online MDR.
-# Submission: Anonymous for ICML
 # ==============================================================================
 
 library(kedd)
 
 #' Data-Driven Online MDR Control (OMDRC-DD)
 #'
-#' Implementation of the Data-Driven Online Missed Discovery Rate (OMDRC-DD) 
-#' algorithm. This procedure estimates local density ratios using Kernel 
-#' Density Estimation (KDE) with a sliding window approach.
+#' Implements the data-driven online MDR control algorithm (Algorithm 2 in the paper).
+#' This procedure operates on a stream of observations, making real-time decisions
+#' by estimating the density ratio using Kernel Density Estimation (KDE) on a 
+#' sliding window of recent data.
 #'
-#' @param z Numeric vector. Observed data stream $\{Z_t\}$.
-#' @param z_ini Numeric vector. Initial batch of unlabeled null samples for density estimation.
-#' @param z1 Numeric vector. Labeled alternative samples (prior knowledge from $f_1$).
-#' @param alpha Numeric. The target MDR control level $\alpha \in (0, 1)$.
-#' @param D Integer. Sliding window size for updating the mixture density estimation.
-#' @param grid_n Integer. Number of points for the KDE grid. Default is 1000.
-#' @param pad Numeric. Numerical padding for the density estimation range. Default is 5.
+#' @param z A numeric vector representing the incoming data stream $\{X_t\}$.
+#' @param z_ini A numeric vector of initial unlabeled observations used to bootstrap 
+#'   the mixture density estimation.
+#' @param z1 A numeric vector of labeled samples from the alternative distribution 
+#'   ($F_1$), representing prior knowledge of anomalies.
+#' @param alpha A numeric value in (0, 1) specifying the target MDR level.
+#' @param D An integer specifying the size of the sliding window used for estimating 
+#'   the mixture density $f$.
+#' @param M A numeric value for truncating the estimated density ratio to ensure
+#'   numerical stability. Defaults to 10.
+#' @param grid_n An integer for the number of grid points used in the KDE computation.
+#'   Defaults to 1000.
+#' @param pad A numeric value to extend the range of the KDE grid, preventing boundary
+#'   effects. Defaults to 5.
 #'
 #' @return A list containing:
-#' \item{de}{Binary decisions: 1 for Discovery (signal), 0 for Non-discovery.}
-#' \item{DR}{Estimated local density ratios (Local MDR estimates) for each observation.}
-#' \item{h1}{Bandwidth utilized for the alternative density ($f_1$) estimation.}
-#' \item{from0}{Lower bound of the estimation grid.}
-#' \item{to0}{Upper bound of the estimation grid.}
+#' \item{de}{A binary vector of decisions for each point in `z` (1 for discovery, 0 for non-discovery).}
+#' \item{DR}{A numeric vector of the estimated density ratios ($\widehat{\mathrm{DR}}_t$) for each observation.}
+#' \item{h1}{The bandwidth calculated for the alternative density ($f_1$) estimation.}
+#' \item{from0}{The lower bound of the grid used for density estimation.}
+#' \item{to0}{The upper bound of the grid used for density estimation.}
 #' @export
-OMDRC_DD <- function(z, z_ini, z1, alpha, D, 
+OMDRC_DD <- function(z, z_ini, z1, alpha, D,M=10, 
                      grid_n = 1000, pad = 5) {
   
   m <- length(z)
@@ -78,7 +85,7 @@ OMDRC_DD <- function(z, z_ini, z1, alpha, D,
     fhat <- max(fhat, 1e-6)
     
     # Estimate the local density ratio (Local MDR)
-    current_DR <- min(f1hat / fhat, 1/alpha)
+    current_DR <- min(f1hat / fhat, M)
     DR[t] <- current_DR
     
     # Testing Budget (Capacity) Update Rule
