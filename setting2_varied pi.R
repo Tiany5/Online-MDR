@@ -3,7 +3,6 @@
 # Description: This script evaluates the robustness of the OMDRC framework 
 #              under varying signal proportions (pi) using the Ratio of 
 #              Expectations formula for MDR and FDR.
-# Submission: Anonymous for ICML Review
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
@@ -163,7 +162,8 @@ plot_panel <- function(res, p_val, type = "MDR") {
   
   if (type == "MDR") {
     p_main <- p_main + geom_hline(yintercept = params$alpha, linetype = 'dashed', color = 'black') +
-      scale_y_continuous(breaks = seq(0, 0.5, by = 0.1))
+      scale_y_continuous(breaks = seq(0, 0.5, by = 0.1))+
+      coord_cartesian(ylim = c(0, NA))
     
     # --- Inset detailed view logic ---
     df_zoom <- df %>% filter(type %in% c("OMDRC.OR", "FT"))
@@ -180,7 +180,7 @@ plot_panel <- function(res, p_val, type = "MDR") {
       theme_void() + theme(panel.background = element_rect(fill = "white", color = "black", linewidth = 0.5),
                            axis.text = element_text(size = 9, color = "black"))
     
-    p_final <- p_main + inset_element(p_inset, 0.35, 0.3, 0.98, 0.75)
+    p_final <- p_main + inset_element(p_inset, 0.35, 0.45, 0.98, 0.85)
   } else {
     p_final <- p_main + scale_y_continuous(expand = expansion(mult = c(0.05, 0.1)))
   }
