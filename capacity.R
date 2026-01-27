@@ -1,6 +1,5 @@
 # ==============================================================================
 # Reproduction Script for Online Misdiscovery Rate Control (OMDRC)
-# Submitted to ICML (Anonymous Submission)
 # ==============================================================================
 # This script performs numerical simulations to evaluate the performance of
 # OMDRC-OR versus Fixed Threshold (FT) baselines under different signal patterns.
