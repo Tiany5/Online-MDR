@@ -3,7 +3,6 @@
 Reference implementation and reproduction code for the paper
 
 > **Sequential Anomaly Detection with Online Missed Discovery Rate Control**
-> Yang Tian, Wenguang Sun, Bowen Gang
 
 The repository implements **OMDRC** — an online decision rule that screens a
 data stream one observation at a time while keeping the *missed discovery rate*
@@ -264,17 +263,6 @@ the offline fixed-threshold oracle.
   not distributed, the first run recomputes and creates `ccfd_results_cache.rds`.
 
 ---
-
-## Citation
-
-```bibtex
-@article{tian2026omdrc,
-  title   = {Sequential Anomaly Detection with Online Missed Discovery Rate Control},
-  author  = {Tian, Yang and Sun, Wenguang and Gang, Bowen},
-  journal = {Statistics and Computing},
-  year    = {2026}
-}
-```
 
 ## License
 
