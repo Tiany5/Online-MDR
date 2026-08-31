@@ -1,0 +1,44 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the paper below."
+title: "OMDRC: Sequential Anomaly Detection with Online Missed Discovery Rate Control"
+abstract: >-
+  Reference implementation of OMDRC, an online decision rule that screens a data
+  stream one observation at a time while controlling the missed discovery rate
+  (MDR) at every time point via a capacity (alpha-wealth) recursion, together
+  with the code reproducing all figures in the paper.
+license: MIT
+type: software
+authors:
+  - family-names: Tian
+    given-names: Yang
+    email: tiany5@zju.edu.cn
+    affiliation: >-
+      Center for Data Science and School of Mathematical Sciences,
+      Zhejiang University
+  - family-names: Sun
+    given-names: Wenguang
+    email: wgsun@zju.edu.cn
+    affiliation: >-
+      Center for Data Science and School of Management, Zhejiang University
+  - family-names: Gang
+    given-names: Bowen
+    email: bgang@ualberta.ca
+    affiliation: School of Management, University of Alberta
+keywords:
+  - missed discovery rate
+  - online multiple testing
+  - anomaly detection
+  - data streams
+  - density ratio estimation
+preferred-citation:
+  type: article
+  title: "Sequential Anomaly Detection with Online Missed Discovery Rate Control"
+  journal: "Statistics and Computing"
+  year: 2026
+  authors:
+    - family-names: Tian
+      given-names: Yang
+    - family-names: Sun
+      given-names: Wenguang
+    - family-names: Gang
+      given-names: Bowen
